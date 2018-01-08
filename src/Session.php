@@ -72,6 +72,15 @@ class Session implements SessionInterface
     }
 
     /**
+     * @param $key
+     * @return void
+     */
+    public function delete($key)
+    {
+        unset($this->data[$key]);
+    }
+
+    /**
      * @param $id
      * @return $this
      */
