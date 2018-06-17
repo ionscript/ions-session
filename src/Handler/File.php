@@ -20,12 +20,14 @@ class File implements \SessionHandlerInterface
     /**
      * @param string $path
      * @param string $name
-     * @return void
+     * @return bool
      */
     public function open($path, $name)
     {
         $this->name = $name;
         $this->path = $path;
+
+        return true;
     }
 
     /**
@@ -58,7 +60,7 @@ class File implements \SessionHandlerInterface
             return $data;
         }
 
-        return [];
+        return '';
     }
 
     /**

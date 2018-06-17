@@ -19,7 +19,7 @@ class Db implements \SessionHandlerInterface
     /**
      * @var
      */
-    private $lifetime;
+    private $maxlifetime;
 
     /**
      * Db constructor.
@@ -33,14 +33,16 @@ class Db implements \SessionHandlerInterface
     /**
      * @param string $path
      * @param string $name
-     * @return void
+     * @return bool
      */
     public function open($path, $name)
     {
         $this->name = $name;
         $this->path = $path;
 
-        $this->lifetime = ini_get('session.gc_maxlifetime');
+        $this->maxlifetime = ini_get('session.gc_maxlifetime');
+
+        return true;
     }
 
     /**
@@ -57,13 +59,13 @@ class Db implements \SessionHandlerInterface
      */
     public function read($id)
     {
-        $query = $this->db->query('SELECT `data` FROM `session` WHERE id = ' . $this->db->escape($id) . ' AND `name` = ' . $this->db->escape($this->name) . ' AND expire > NOW()');
+        $query = $this->db->query('SELECT `data` FROM `session` WHERE id = ' . $this->db->escape($id) . ' AND `name` = ' . $this->db->escape($this->name) . ' AND `expire` > ' . (int)time());
 
         if ($query->count) {
             return $query->row['data'];
         }
 
-        return false;
+        return '';
     }
 
     /**
@@ -74,7 +76,7 @@ class Db implements \SessionHandlerInterface
     public function write($id, $data)
     {
         if ($id) {
-            $this->db->execute('REPLACE INTO `session` SET id = ' . $this->db->escape($id) . ', `name` = ' . $this->db->escape($this->name) . ', `data` = ' . $this->db->escape($data) . ', expire = ' . $this->db->escape(date('Y-m-d H:i:s', time() + $this->lifetime)));
+            $this->db->execute('REPLACE INTO `session` SET id = ' . $this->db->escape($id) . ', `name` = ' . $this->db->escape($this->name) . ', `data` = ' . $this->db->escape($data) . ', expire = ' . $this->db->escape(date('Y-m-d H:i:s', time() + $this->maxlifetime)));
         }
 
         return true;
@@ -97,16 +99,18 @@ class Db implements \SessionHandlerInterface
      */
     public function gc($maxlifetime)
     {
-        $this->db->execute('DELETE FROM `session` WHERE expire < NOW()');
+        $this->db->execute('DELETE FROM `session` WHERE `expire` < '. ((int)time() + $this->maxlifetime));
 
         return true;
     }
 
-    /**
-     * @return void
-     */
-    public function __destruct()
-    {
-        $this->gc($this->lifetime);
-    }
+//    /**
+//     * @return bool
+//     */
+//    public function __destruct()
+//    {
+//        $this->gc($this->maxlifetime);
+//
+//        return true;
+//    }
 }
